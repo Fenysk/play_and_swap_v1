@@ -5,30 +5,32 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from "argon2";
 import { Tokens } from './types';
 import { LoginDto, RegisterDto } from './dto';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly userService: UsersService,
         private readonly configService: ConfigService,
-        private readonly jwtService: JwtService
+        private readonly jwtService: JwtService,
+        private readonly emailService: EmailService
     ) { }
 
-    async register(registerDto: RegisterDto): Promise<Tokens> {
+    async register(registerDto: RegisterDto): Promise<any> {
         const hashedPassword = await argon2.hash(registerDto.password);
-        const email = registerDto.email;
 
         const newUser: any = await this.userService.createUser({
-            email,
+            email: registerDto.email,
             hashedPassword
         });
 
-        // TODO: Send email confirmation
+        const confirmationId: string = await this.emailService.sendEmailConfirmation(newUser);
 
-        const tokens = await this.getTokens(newUser);
-        await this.updateRefreshTokenHash(newUser.id, tokens.refreshToken);
+        const updatedUser = await this.userService.updateUser(newUser.id, {
+            confirmationId
+        })
 
-        return tokens;
+        return updatedUser;
     }
 
     async login(loginDto: LoginDto): Promise<Tokens> {
@@ -71,6 +73,23 @@ export class AuthService {
         await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
 
         return tokens;
+    }
+
+    async confirmEmail(id: string): Promise<string> {
+        const user = await this.userService.getUserByConfirmationId(id);
+
+        if (!user)
+            throw new ForbiddenException('Access denied');
+
+        await this.userService.updateUser(user.id, {
+            confirmed: true,
+            confirmationId: null,
+            roles: { push: 'USER' }
+        });
+
+        await this.emailService.sendEmailWelcome(user);
+
+        return 'Email confirmed successfully';
     }
 
 

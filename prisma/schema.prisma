@@ -12,11 +12,14 @@ model User {
     email          String  @unique
     hashedPassword String  @map("hashed_password")
     refreshToken   String? @map("hashed_rt")
-    roles          Role[]  @default([USER])
+    roles          Role[]
 
     firstName String? @map("first_name")
     lastName  String? @map("last_name")
     userName  String? @map("user_name")
+
+    confirmationId String? @map("confirmation_id")
+    confirmed      Boolean @default(false)
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @default(now()) @updatedAt @map("updated_at")

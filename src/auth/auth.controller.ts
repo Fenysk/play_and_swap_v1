@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto';
 import { Tokens } from './types';
@@ -13,7 +13,7 @@ export class AuthController {
     @Public()
     @Post('register')
     @HttpCode(HttpStatus.CREATED)
-    register(@Body() registerDto: RegisterDto): Promise<Tokens> {
+    register(@Body() registerDto: RegisterDto): Promise<any> {
         return this.authService.register(registerDto);
     }
 
@@ -39,6 +39,12 @@ export class AuthController {
         @GetUser('refreshToken') refreshToken: string
     ) {
         return this.authService.refreshTokens(userId, refreshToken);
+    }
+
+    @Public()
+    @Get('confirm-account/:id')
+    confirmEmail(@Param('id') id: string) {
+        return this.authService.confirmEmail(id);
     }
 
 }

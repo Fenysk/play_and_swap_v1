@@ -37,6 +37,14 @@ export class UsersService {
         return user;
     }
 
+    async getUserByConfirmationId(confirmationId: string): Promise<any> {
+        const user = await this.prisma.user.findFirst({
+            where: { confirmationId }
+        });
+
+        return user;
+    }
+
     async createUser(data: InputUserDto): Promise<object> {
         const newUser = await this.prisma.user.create({
             data: {
