@@ -20,7 +20,7 @@ export class UsersService {
         return users;
     }
 
-    async getUserById(id: string): Promise<object> {
+    async getUserById(id: string): Promise<any> {
         const user = await this.prisma.user.findUniqueOrThrow({
             where: { id }
         });
@@ -47,11 +47,18 @@ export class UsersService {
     }
 
     async createUser(data: InputUserDto): Promise<object> {
+        const newCartId = uuidv4();
+
         const newUser = await this.prisma.user.create({
             data: {
                 id: uuidv4(),
                 email: data.email,
                 hashedPassword: data.hashedPassword,
+                activeCartId: newCartId,
+
+                Carts: {
+                    create: { id: newCartId }
+                }
             }
         });
         return newUser;

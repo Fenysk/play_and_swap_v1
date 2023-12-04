@@ -20,12 +20,14 @@ model User {
 
     confirmationId String? @map("confirmation_id")
     confirmed      Boolean @default(false)
+    activeCartId   String? @map("active_cart_id")
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
     Addresses Address[]
     Items     Item[]
+    Carts     Cart[]
 }
 
 model Address {
@@ -58,7 +60,39 @@ model Item {
     userId String @map("user_id")
     User   User?  @relation(fields: [userId], references: [id])
 
+    CartItem CartItem[]
+
     @@map("items")
+}
+
+model Cart {
+    id String @id @unique
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+    userId String @map("user_id")
+    User   User?  @relation(fields: [userId], references: [id])
+
+    CartItem CartItem[]
+
+    @@map("carts")
+}
+
+model CartItem {
+    id String @id @unique
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+    cartId String @map("cart_id")
+    Cart   Cart?  @relation(fields: [cartId], references: [id])
+
+    itemId String @map("item_id")
+    Item   Item?  @relation(fields: [itemId], references: [id])
+
+    @@unique([cartId, itemId])
+    @@map("cart_items")
 }
 
 enum Role {
