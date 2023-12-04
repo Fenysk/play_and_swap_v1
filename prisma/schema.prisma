@@ -25,11 +25,11 @@ model User {
     updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
     Addresses Address[]
+    Items     Item[]
 }
 
 model Address {
     id              String   @id @unique
-    userId          String   @map("user_id")
     numberAndStreet String   @map("number_and_street")
     city            String
     zipCode         String   @map("zip_code")
@@ -38,7 +38,27 @@ model Address {
     createdAt       DateTime @default(now()) @map("created_at")
     updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
 
-    User User? @relation(fields: [userId], references: [id])
+    userId String @map("user_id")
+    User   User?  @relation(fields: [userId], references: [id])
+}
+
+model Item {
+    id          String   @id @unique
+    name        String
+    description String
+    state       String
+    price       Decimal
+    images      String[]
+
+    isVisible Boolean @default(true) @map("is_visible")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+    userId String @map("user_id")
+    User   User?  @relation(fields: [userId], references: [id])
+
+    @@map("items")
 }
 
 enum Role {

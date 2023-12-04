@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { EmailModule } from './email/email.module';
+import { ItemsModule } from './items/items.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { EmailModule } from './email/email.module';
             isGlobal: true
         }),
         EmailModule,
+        ItemsModule,
     ],
     controllers: [AppController],
     providers: [AppService],

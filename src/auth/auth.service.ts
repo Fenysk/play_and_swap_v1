@@ -30,7 +30,7 @@ export class AuthService {
             confirmationId
         })
 
-        return updatedUser;
+        return 'Your account has been created successfully, please check your email to confirm your account';
     }
 
     async login(loginDto: LoginDto): Promise<Tokens> {
