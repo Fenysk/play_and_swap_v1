@@ -28,6 +28,7 @@ model User {
     Addresses Address[]
     Items     Item[]
     Carts     Cart[]
+    Order     Order[]
 }
 
 model Address {
@@ -41,7 +42,9 @@ model Address {
     updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
 
     userId String @map("user_id")
-    User   User?  @relation(fields: [userId], references: [id])
+    User   User   @relation(fields: [userId], references: [id])
+
+    Order Order[]
 }
 
 model Item {
@@ -75,6 +78,7 @@ model Cart {
     User   User?  @relation(fields: [userId], references: [id])
 
     CartItem CartItem[]
+    Order    Order?
 
     @@map("carts")
 }
@@ -93,6 +97,30 @@ model CartItem {
 
     @@unique([cartId, itemId])
     @@map("cart_items")
+}
+
+model Order {
+    id          String @id @unique
+    amount      Int
+    taxAmount   Int    @default(0)
+    totalAmount Int    @map("total_amount")
+    currency    String @default("EUR")
+    status      String @default("pending")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+    userId String @map("user_id")
+    User   User   @relation(fields: [userId], references: [id])
+
+    cartId String @unique @map("cart_id")
+    Cart   Cart   @relation(fields: [cartId], references: [id])
+
+    addressId String  @map("address_id")
+    Address   Address @relation(fields: [addressId], references: [id])
+
+    @@unique([userId, cartId])
+    @@map("orders")
 }
 
 enum Role {
