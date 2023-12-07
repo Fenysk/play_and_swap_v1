@@ -1,22 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Cart } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { CartService } from 'src/cart/cart.service';
+import { PaymentService } from 'src/payment/payment.service';
 
 @Injectable()
 export class OrdersService {
     constructor(
         private readonly prismaService: PrismaService,
         private readonly cartService: CartService,
+        private readonly paymentService: PaymentService,
     ) { }
 
     async getMyOrders(userId: string) {
         const orders = await this.prismaService.order.findMany({
-            where: {
-                userId,
-            },
+            where: { userId },
         });
 
         if (!orders.length)
@@ -25,26 +24,46 @@ export class OrdersService {
         return orders;
     }
 
+    async getUserOrderByIdWithDetails(userId: string, orderId: string) {
+        const order = await this.prismaService.order.findUnique({
+            where: {
+                id: orderId,
+                User: { id: userId },
+            },
+            include: {
+                Cart: {
+                    include: {
+                        CartItem: {
+                            include: { Item: true },
+                        },
+                    },
+                }
+            }
+        });
+
+        if (!order)
+            throw new NotFoundException('Order not found');
+
+        return order;
+    }
+
     async createOrder(userId: string, dto: CreateOrderDto) {
         const { cartId, addressId } = dto;
 
-        const cart = await this.prismaService.cart.findUnique({
+        const cart = await this.prismaService.cart.findUniqueOrThrow({
             where: { id: cartId },
             include: { CartItem: { include: { Item: true } } },
         });
 
-        if (!cart)
-            throw new NotFoundException('Cart not found');
-
         if (!cart.CartItem.length)
             throw new NotFoundException('Cart is empty');
 
-        const address = await this.prismaService.address.findUnique({
+        const address = await this.prismaService.address.findUniqueOrThrow({
             where: { id: addressId, userId },
         });
 
         const tax = 0;
-        const amount = this.getAmount(cart) * 100;
+        const amount = this.getCartTotalAmount(cart) * 100;
         const taxAmount = amount * tax;
         const totalAmount = amount + taxAmount;
 
@@ -58,14 +77,25 @@ export class OrdersService {
                 User: { connect: { id: userId } },
                 Cart: { connect: { id: cartId } },
             },
+            include: { Cart: { include: { CartItem: { include: { Item: true } } } } }
         });
 
         const newCart = await this.cartService.createNewCart(userId);
 
-        return order;
+        const paymentSession = await this.paymentService.createPaymentSession(userId, order)
+
+        const updatedOrder = await this.prismaService.order.findUnique({
+            where: { id: order.id },
+            include: {
+                Cart: { include: { CartItem: { include: { Item: true } } } },
+                Payment: true
+            }
+        });
+
+        return updatedOrder;
     }
 
-    getAmount(cart: any): number {
+    getCartTotalAmount(cart: any): number {
         let amount = 0;
         for (const cartItem of cart.CartItem) {
             amount += Number((cartItem.Item.price).toString())

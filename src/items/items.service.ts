@@ -29,17 +29,6 @@ export class ItemsService {
         return items;
     }
 
-    async updateMyItem(user_id: string, item_id: string, data: any) {
-        const updatedItem = await this.prismaService.item.update({
-            where: { id: item_id, userId: user_id },
-            data: {
-                ...data
-            }
-        });
-
-        return updatedItem;
-    }
-
     async publishItem(user_id: string, createItemDto: CreateItemDto) {
         const item = await this.prismaService.item.create({
             data: {
@@ -55,6 +44,17 @@ export class ItemsService {
         });
 
         return item;
+    }
+
+    async updateMyItem(user_id: string, item_id: string, data: any) {
+        const updatedItem = await this.prismaService.item.update({
+            where: { id: item_id, userId: user_id },
+            data: {
+                ...data
+            }
+        });
+
+        return updatedItem;
     }
 
     async deleteMyItem(user_id: string, item_id: string) {

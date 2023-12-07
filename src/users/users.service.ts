@@ -95,9 +95,15 @@ export class UsersService {
     }
 
     async deleteUser(id: string): Promise<string> {
-        const deletedUser = await this.prisma.user.delete({
-            where: { id }
-        });
-        return `${deletedUser.email} deleted`;
+        try {
+            const deletedUser = await this.prisma.user.delete({
+                where: { id }
+            });
+
+            return `${deletedUser.email} deleted`;
+        } catch (error) {
+            console.log(error);
+        }
+        
     }
 }

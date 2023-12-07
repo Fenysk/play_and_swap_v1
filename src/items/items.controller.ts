@@ -22,19 +22,19 @@ export class ItemsController {
     }
 
     @Roles(Role.USER)
-    @Put('mine/:id')
-    updateMyItem(@GetUser('sub') user_id: any, @Param('id') item_id: string, @Body() data: any) {
-        return this.itemsService.updateMyItem(user_id, item_id, data);
-    }
-
-    @Roles(Role.USER)
     @Post('publish')
     publishItem(@GetUser('sub') user_id: any, @Body() createItemDto: CreateItemDto) {
         return this.itemsService.publishItem(user_id, createItemDto);
     }
 
     @Roles(Role.USER)
-    @Delete('mine/:id')
+    @Put('update/mine/:id')
+    updateMyItem(@GetUser('sub') user_id: any, @Param('id') item_id: string, @Body() data: any) {
+        return this.itemsService.updateMyItem(user_id, item_id, data);
+    }    
+
+    @Roles(Role.USER)
+    @Delete('delete/mine/:id')
     deleteMyItem(@GetUser('sub') user_id: any, @Param('id') item_id: string) {
         return this.itemsService.deleteMyItem(user_id, item_id);
     }
