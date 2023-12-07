@@ -35,7 +35,8 @@
     "resend": "^2.0.0",
     "rxjs": "^7.8.1",
     "stripe": "^14.7.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

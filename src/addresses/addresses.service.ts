@@ -19,6 +19,17 @@ export class AddressesService {
         return addresses;
     }
 
+    async getMyAddressById(userId: string, id: string) {
+        const address = await this.prismaService.address.findUniqueOrThrow({
+            where: { id },
+        });
+
+        if (address.userId !== userId)
+            throw new NotFoundException('Address not found');
+
+        return address;
+    }
+
     async createAddress(userId: string, data: any) {
         const address = await this.prismaService.address.create({
             data: {
