@@ -21,7 +21,7 @@ export class ItemsController {
         return this.itemsService.getMyItems(user_id);
     }
 
-    @Roles(Role.USER)
+    @Roles(Role.SELLER)
     @Post('publish')
     publishItem(@GetUser('sub') user_id: any, @Body() createItemDto: CreateItemDto) {
         return this.itemsService.publishItem(user_id, createItemDto);
@@ -31,7 +31,7 @@ export class ItemsController {
     @Put('update/mine/:id')
     updateMyItem(@GetUser('sub') user_id: any, @Param('id') item_id: string, @Body() data: any) {
         return this.itemsService.updateMyItem(user_id, item_id, data);
-    }    
+    }
 
     @Roles(Role.USER)
     @Delete('delete/mine/:id')

@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, Post, Put } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { GetUser, Roles } from 'src/users/decorator';
 import { Role } from 'src/users/entities';

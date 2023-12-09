@@ -16,6 +16,14 @@ export class AddressesController {
         return await this.addressesService.createAddress(userId, data);
     }
 
+    @Post('default/:id')
+    async setDefaultAddress(
+        @GetUser('sub') userId: string,
+        @Param('id') id: string
+    ) {
+        return await this.addressesService.setDefaultAddress(userId, id);
+    }
+
     @Delete('delete/:id')
     async deleteAddress(@GetUser('sub') userId: string, @Param('id') id: string) {
         return await this.addressesService.deleteAddress(userId, id);

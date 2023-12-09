@@ -6,7 +6,9 @@ export class SoapService {
 
     async postSoapRequest(API_URL: string, envelope: any, body: any, action: any, args: any) {
 
+        console.log(args);
         const xmlData = this.transformObjectToXml(args);
+        console.log(xmlData);
 
         const bodyContent = `${envelope.start}${body.start}${action.start}${xmlData}${action.end}${body.end}${envelope.end}`;
 
@@ -19,6 +21,9 @@ export class SoapService {
         });
 
         const text = await response.text();
+
+        console.log(text);
+
         const data = this.transformXmlToObject(text);
         return data;
     }

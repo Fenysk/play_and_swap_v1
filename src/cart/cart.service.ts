@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ItemsService } from 'src/items/items.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,6 +9,7 @@ export class CartService {
     constructor(
         private readonly prismaService: PrismaService,
         private readonly usersService: UsersService,
+        private readonly itemsService: ItemsService
     ) { }
 
     async getMyLastCart(userId: string): Promise<any> {
@@ -51,6 +53,12 @@ export class CartService {
             where: { id: user.activeCartId }
         });
 
+        const item = await this.itemsService.getItemByIdWithDetails(itemId);
+
+        // Check if item is not from the same user
+        if (item.User.id === userId)
+            throw new ConflictException('You cannot add your own item to your cart');
+
         const updatedCart = await this.prismaService.cart.update({
             where: {
                 id: userCart.id
@@ -74,8 +82,18 @@ export class CartService {
         const user = await this.usersService.getUserById(userId);
 
         const userCart = await this.prismaService.cart.findUnique({
-            where: { id: user.activeCartId }
+            where: { id: user.activeCartId },
+            include: {
+                CartItem: {
+                    include: {
+                        Item: true
+                    }
+                }
+            }
         });
+
+        if (!userCart.CartItem.some(cartItem => cartItem.Item.id === itemId))
+            throw new NotFoundException('Item not found in cart');
 
         const updatedCart = await this.prismaService.cart.update({
             where: {
@@ -98,8 +116,12 @@ export class CartService {
 
     async switchCart(userId: string, cartId: string): Promise<string> {
         const cart = await this.prismaService.cart.findUniqueOrThrow({
-            where: { id: cartId }
+            where: { id: cartId },
+            include: { Order: true }
         });
+
+        if (cart.Order)
+            throw new ForbiddenException('You cannot switch to a cart that has already been ordered');
 
         const updatedUser = await this.usersService.updateUser(userId,
             { activeCartId: cartId }

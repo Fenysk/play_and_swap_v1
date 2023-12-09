@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UsersService } from 'src/users/users.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AddressesService {
-    constructor(private readonly prismaService: PrismaService) { }
+    constructor(
+        private readonly prismaService: PrismaService,
+
+        @Inject(forwardRef(() => UsersService))
+        private readonly usersService: UsersService,
+    ) { }
 
     async getMyAddresses(userId: string) {
         const addresses = await this.prismaService.address.findMany({
@@ -19,9 +25,31 @@ export class AddressesService {
         return addresses;
     }
 
+    async getAddressById(id: string) {
+        const address = await this.prismaService.address.findUniqueOrThrow({
+            where: { id },
+            include: { User: true }
+        });
+
+        return address;
+    }
+
     async getMyAddressById(userId: string, id: string) {
         const address = await this.prismaService.address.findUniqueOrThrow({
             where: { id },
+        });
+
+        if (address.userId !== userId)
+            throw new NotFoundException('Address not found');
+
+        return address;
+    }
+
+    async getMyDefaultCustomerAddress(userId: string) {
+        const user = await this.usersService.getUserById(userId);
+
+        const address = await this.prismaService.address.findUniqueOrThrow({
+            where: { id: user.defaultCustomerAddressId },
         });
 
         if (address.userId !== userId)
@@ -39,9 +67,22 @@ export class AddressesService {
                 zipCode: data.zipCode,
                 state: data.state,
                 country: data.country,
-                User: { connect: { id: userId } },
+                User: { connect: { id: userId }, },
             },
         });
+
+        return address;
+    }
+
+    async setDefaultAddress(userId: string, id: string) {
+        const address = await this.prismaService.address.findUniqueOrThrow({
+            where: { id, },
+        });
+
+        if (address.userId !== userId)
+            throw new NotFoundException('Address not found');
+
+        await this.usersService.updateUser(userId, { defaultCustomerAddressId: address.id });
 
         return address;
     }

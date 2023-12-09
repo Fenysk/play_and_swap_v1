@@ -6,13 +6,29 @@ import { GetUser } from 'src/users/decorator';
 export class ShippingController {
     constructor(private readonly shippingService: ShippingService) { }
 
+    @Post('relay-points/default')
+    @HttpCode(HttpStatus.OK)
+    async getRelayPointsArroundMeByDefaultAddress(
+        @GetUser('sub') userId: string
+    ) {
+        return this.shippingService.getRelayPointsArroundMeByDefaultCustomerAddress(userId);
+    }
+
     @Post('relay-points/:addressId')
     @HttpCode(HttpStatus.OK)
-    async getRelayPointsArroundMe(
+    async getRelayPointsArroundMeByAddressId(
         @GetUser('sub') userId: string,
         @Param('addressId') addressId: string
     ) {
-        return this.shippingService.getRelayPointsArroundMe(userId, addressId);
+        return this.shippingService.getRelayPointsArroundMeByAddressId(userId, addressId);
+    }
+
+    @Post('create-expedition/:orderId')
+    @HttpCode(HttpStatus.OK)
+    async createExpedition(
+        @Param('orderId') orderId: string
+    ) {
+        return this.shippingService.createRelayExpedition(orderId);
     }
 
 }

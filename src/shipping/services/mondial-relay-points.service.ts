@@ -1,13 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { SoapService } from "./soap.service";
 import { ConfigService } from "@nestjs/config";
+import { Md5HashService } from "./md5-hash.service";
 const crypto = require('crypto');
 
 @Injectable()
 export class MondialRelayPointsService {
     constructor(
         private readonly soapService: SoapService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly md5HashService: Md5HashService,
     ) { }
 
     async getMondialRelayPointsArroundMe(address: any) {
@@ -15,7 +17,7 @@ export class MondialRelayPointsService {
         const API_URL = this.configService.get('MONDIAL_RELAY_API_URL');
 
         const envelope = { // Cela correspond à l'entête de la requête SOAP. Elle permet de définir le type de requête et les namespaces utilisés.
-            start: '<soap12:Envelope xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd = "http://www.w3.org/2001/XMLSchema" xmlns:soap12 = "http://www.w3.org/2003/05/soap-envelope" > ',
+            start: '<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">',
             end: '</soap12:Envelope>'
         }
 
@@ -34,7 +36,7 @@ export class MondialRelayPointsService {
             Pays: address.country,
             CP: address.zipCode,
         };
-        args['Security'] = this.getSecurityHash(args.Enseigne, args.Pays, args.CP)
+        args['Security'] = this.md5HashService.getSecurityHash(args)
 
         const response = await this.soapService.postSoapRequest(API_URL, envelope, body, action, args);
         const relayPoints = this.getRelayPoints(response);
@@ -63,17 +65,6 @@ export class MondialRelayPointsService {
         });
 
         return relayPoints;
-    }
-
-    getSecurityHash(enseigne: string, pays: string, cp: string) {
-
-        // MD5 capslock hash of the concatenation of the following values ​​(in this order): Enseigne + Pays + CP + PrivateKey
-
-        const MONDIAL_RELAY_SECRET_KEY = this.configService.get('MONDIAL_RELAY_SECRET_KEY');
-        const data = `${enseigne}${pays}${cp}${MONDIAL_RELAY_SECRET_KEY}`;
-
-        const hash = crypto.createHash('md5').update(data).digest('hex').toUpperCase();
-        return hash;
     }
 
 }

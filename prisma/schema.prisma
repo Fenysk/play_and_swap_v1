@@ -14,13 +14,17 @@ model User {
     refreshToken   String? @map("hashed_rt")
     roles          Role[]
 
-    firstName String? @map("first_name")
-    lastName  String? @map("last_name")
-    userName  String? @map("user_name")
+    firstName   String? @map("first_name")
+    lastName    String? @map("last_name")
+    userName    String? @map("user_name")
+    phoneNumber String? @map("phone_number")
 
     confirmationId String? @map("confirmation_id")
     confirmed      Boolean @default(false)
-    activeCartId   String? @map("active_cart_id")
+    activeCartId   String? @unique @map("active_cart_id")
+
+    defaultCustomerAddressId String? @unique @map("default_customer_address_id")
+    defaultSellerAddressId   String? @unique @map("default_seller_address_id")
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -45,6 +49,8 @@ model Address {
     User   User?   @relation(fields: [userId], references: [id])
 
     Order Order[]
+
+    @@map("addresses")
 }
 
 model Item {
@@ -100,12 +106,17 @@ model CartItem {
 }
 
 model Order {
-    id          String @id @unique
-    amount      Int
-    taxAmount   Int    @default(0)
-    totalAmount Int    @map("total_amount")
-    currency    String @default("eur")
-    status      String @default("pending")
+    id                   String  @id @unique
+    amount               Int
+    taxAmount            Int     @default(0) @map("tax_amount")
+    totalAmount          Int     @map("total_amount")
+    currency             String  @default("eur")
+    status               String  @default("pending")
+    relayId              String? @map("relay_id")
+    shippingInstructions String? @map("shipping_instructions")
+
+    expeditionNumber String? @map("expedition_number")
+    stickerUrl       String? @map("sticker_url")
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -148,4 +159,5 @@ model Payment {
 enum Role {
     USER
     ADMIN
+    SELLER
 }

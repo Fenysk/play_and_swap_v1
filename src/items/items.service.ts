@@ -29,6 +29,15 @@ export class ItemsService {
         return items;
     }
 
+    async getItemByIdWithDetails(item_id: string) {
+        const item = await this.prismaService.item.findUniqueOrThrow({
+            where: { id: item_id },
+            include: { User: true }
+        });
+
+        return item;
+    }
+
     async publishItem(user_id: string, createItemDto: CreateItemDto) {
         const item = await this.prismaService.item.create({
             data: {

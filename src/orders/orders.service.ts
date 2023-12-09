@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,6 +24,33 @@ export class OrdersService {
         return orders;
     }
 
+    async getOrderByIdWithDetails(orderId: string) {
+        const order = await this.prismaService.order.findUniqueOrThrow({
+            where: { id: orderId },
+            include: {
+                Cart: {
+                    include: {
+                        CartItem: {
+                            include: {
+                                Item: {
+                                    include: {
+                                        User: {
+                                            include: {
+                                                Addresses: true
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            }
+        });
+
+        return order;
+    }
+
     async getUserOrderByIdWithDetails(userId: string, orderId: string) {
         const order = await this.prismaService.order.findUnique({
             where: {
@@ -34,10 +61,20 @@ export class OrdersService {
                 Cart: {
                     include: {
                         CartItem: {
-                            include: { Item: true },
+                            include: {
+                                Item: {
+                                    include: {
+                                        User: {
+                                            include: {
+                                                Addresses: true
+                                            }
+                                        }
+                                    }
+                                }
+                            },
                         },
                     },
-                }
+                },
             }
         });
 
@@ -48,19 +85,27 @@ export class OrdersService {
     }
 
     async createOrder(userId: string, dto: CreateOrderDto) {
-        const { cartId, addressId } = dto;
+        const { cartId, addressId, relayId } = dto;
 
         const cart = await this.prismaService.cart.findUniqueOrThrow({
             where: { id: cartId },
-            include: { CartItem: { include: { Item: true } } },
+            include: {
+                CartItem: { include: { Item: true } },
+                Order: true
+            },
         });
 
         if (!cart.CartItem.length)
             throw new NotFoundException('Cart is empty');
 
+        if (cart.Order)
+            throw new ConflictException('Cart already ordered');
+
         const address = await this.prismaService.address.findUniqueOrThrow({
             where: { id: addressId, userId },
         });
+
+        // TODO: check if relay exists
 
         const tax = 0;
         const amount = this.getCartTotalAmount(cart) * 100;
@@ -73,6 +118,7 @@ export class OrdersService {
                 amount,
                 taxAmount,
                 totalAmount,
+                relayId,
                 Address: { connect: { id: addressId } },
                 User: { connect: { id: userId } },
                 Cart: { connect: { id: cartId } },
@@ -89,6 +135,19 @@ export class OrdersService {
             include: {
                 Cart: { include: { CartItem: { include: { Item: true } } } },
                 Payment: true
+            }
+        });
+
+        return updatedOrder;
+    }
+
+    setShippingInfosToOrder(orderId: any, shippingInfos: any) {
+        const updatedOrder = this.prismaService.order.update({
+            where: { id: orderId },
+            data: {
+                expeditionNumber: shippingInfos.expeditionNumber,
+                stickerUrl: shippingInfos.urlEtiquette,
+                status: 'in_shipping'
             }
         });
 

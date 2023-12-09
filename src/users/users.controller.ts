@@ -37,6 +37,13 @@ export class UsersController {
         return await this.usersService.updateUser(user_id, data);
     }
 
+    @Roles(Role.USER)
+    @Put('update/become-seller')
+    @HttpCode(HttpStatus.OK)
+    async becomeSeller(@GetUser('sub') user_id: any, @Body('defaultSellerAddressId') defaultSellerAddressId: string): Promise<object> {
+        return await this.usersService.becomeSeller(user_id, defaultSellerAddressId);
+    }
+
     @Roles(Role.ADMIN)
     @Put('update/:user_id')
     @HttpCode(HttpStatus.OK)
