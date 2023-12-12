@@ -56,8 +56,8 @@ export class CartService {
         const item = await this.itemsService.getItemByIdWithDetails(itemId);
 
         // Check if item is not from the same user
-        if (item.User.id === userId)
-            throw new ConflictException('You cannot add your own item to your cart');
+        // if (item.User.id === userId)
+        //     throw new ConflictException('You cannot add your own item to your cart');
 
         const updatedCart = await this.prismaService.cart.update({
             where: {

@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { AddressesService } from 'src/addresses/addresses.service';
-import { MondialRelayPointsService } from './services/mondial-relay-points.service';
-import { MondialRelayExpeditionService } from './services/mondial-relay-expedition.service';
+import { MondialRelayPointsService } from './services/mondial-relay/mondial-relay-points.service';
+import { MondialRelayExpeditionService } from './services/mondial-relay/mondial-relay-expedition.service';
 import { OrdersService } from 'src/orders/orders.service';
 
 @Injectable()

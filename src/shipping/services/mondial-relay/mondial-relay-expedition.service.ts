@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { SoapService } from "./soap.service";
+import { SoapService } from "../soap.service";
 import { ConfigService } from "@nestjs/config";
 import { OrdersService } from "src/orders/orders.service";
 import { AddressesService } from "src/addresses/addresses.service";
-import { Md5HashService } from "./md5-hash.service";
+import { Md5HashService } from "../md5-hash.service";
 const crypto = require('crypto');
 
 @Injectable()
@@ -20,20 +20,7 @@ export class MondialRelayExpeditionService {
 
         const API_URL = this.configService.get('MONDIAL_RELAY_API_URL');
 
-        const envelope = {
-            start: '<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">',
-            end: '</soap12:Envelope>'
-        }
-
-        const body = {
-            start: '<soap12:Body>',
-            end: '</soap12:Body>'
-        }
-
-        const action = {
-            start: '<WSI2_CreationEtiquette xmlns="http://www.mondialrelay.fr/webservice/">',
-            end: '</WSI2_CreationEtiquette>'
-        }
+        const actionName = 'WSI2_CreationEtiquette';
 
         let texte = '';
         order.Cart.CartItem.forEach((cartItem: any) => {
@@ -85,31 +72,23 @@ export class MondialRelayExpeditionService {
         }
         args['Security'] = this.md5HashService.getSecurityHash(args)
 
-        const response = await this.soapService.postSoapRequest(API_URL, envelope, body, action, args);
-        const newExpedition = this.getExpeditionInfos(response);
+        const response = await this.soapService.postSoapRequest(API_URL, actionName, args);
+        const newExpedition = this.getNewExpeditionInfos(response);
 
         const updatedOrder = await this.odersService.setShippingInfosToOrder(order.id, newExpedition);
 
         return updatedOrder;
     }
 
-    getExpeditionInfos(objectResponse: any) {
-        const expeditionInfos = [];
-
-        const expeditionInfosList = objectResponse['soap:Envelope']['soap:Body'][0]['WSI2_CreationEtiquetteResponse'][0]['WSI2_CreationEtiquetteResult'];
-
+    getNewExpeditionInfos(objectResponse: any) {
         const startUrl = 'https://www.mondialrelay.fr';
 
-        expeditionInfosList.forEach((expeditionInfo: any) => {
-            const expedition = {
-                expeditionNumber: expeditionInfo.ExpeditionNum[0],
-                urlEtiquette: startUrl + expeditionInfo.URL_Etiquette[0].replace('&amp;', '&')
-            };
+        const expeditionInfos = {
+            expeditionNumber: objectResponse.ExpeditionNum,
+            urlEtiquette: startUrl + objectResponse.URL_Etiquette.replace('&amp;', '&')
+        };
 
-            expeditionInfos.push(expedition);
-        });
-
-        return expeditionInfos[0]
+        return expeditionInfos;
     }
 
 }

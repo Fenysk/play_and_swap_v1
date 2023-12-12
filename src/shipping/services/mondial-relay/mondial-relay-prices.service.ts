@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { SoapService } from "./soap.service";
+import { SoapService } from "../soap.service";
 import { ConfigService } from "@nestjs/config";
 import { OrdersService } from "src/orders/orders.service";
 
