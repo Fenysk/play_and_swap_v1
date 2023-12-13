@@ -14,7 +14,7 @@ export class StripeService {
 ORDER :
 {
     "id": "39b125be-3a89-4f97-ac1e-0d1fb1dfe77a",
-    "amount": 2000,
+    "cartAmount": 2000,
     "taxAmount": 0,
     "totalAmount": 2000,
     "currency": "EUR",

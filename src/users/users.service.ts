@@ -28,7 +28,8 @@ export class UsersService {
 
     async getUserById(id: string): Promise<any> {
         const user = await this.prismaService.user.findUniqueOrThrow({
-            where: { id }
+            where: { id },
+            include: { Addresses: true }
         });
 
         const { hashedPassword, ...publicUser } = user;

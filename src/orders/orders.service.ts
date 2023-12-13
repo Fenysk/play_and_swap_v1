@@ -1,21 +1,29 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { CartService } from 'src/cart/cart.service';
 import { PaymentService } from 'src/payment/payment.service';
+import { OrderStatus, PaymentStatus, ShippingStatus } from '@prisma/client';
+import { ShippingService } from 'src/shipping/shipping.service';
 
 @Injectable()
 export class OrdersService {
     constructor(
         private readonly prismaService: PrismaService,
         private readonly cartService: CartService,
-        private readonly paymentService: PaymentService,
+
+        @Inject(forwardRef(() => PaymentService)) private readonly paymentService: PaymentService,
+        @Inject(forwardRef(() => ShippingService)) private readonly shippingService: ShippingService
     ) { }
 
     async getMyOrders(userId: string) {
         const orders = await this.prismaService.order.findMany({
             where: { userId },
+            include: {
+                Payment: true,
+                Shipping: true
+            }
         });
 
         if (!orders.length)
@@ -45,6 +53,8 @@ export class OrdersService {
                         },
                     },
                 },
+                Payment: true,
+                Shipping: true
             }
         });
 
@@ -75,6 +85,8 @@ export class OrdersService {
                         },
                     },
                 },
+                Payment: true,
+                Shipping: true
             }
         });
 
@@ -85,10 +97,13 @@ export class OrdersService {
     }
 
     async createOrder(userId: string, dto: CreateOrderDto) {
-        const { cartId, addressId, relayId } = dto;
+        const { cartId, addressId, carrierName, relayId } = dto;
 
         const cart = await this.prismaService.cart.findUniqueOrThrow({
-            where: { id: cartId },
+            where: {
+                id: cartId,
+                Order: null
+            },
             include: {
                 CartItem: { include: { Item: true } },
                 Order: true
@@ -98,9 +113,6 @@ export class OrdersService {
         if (!cart.CartItem.length)
             throw new NotFoundException('Cart is empty');
 
-        if (cart.Order)
-            throw new ConflictException('Cart already ordered');
-
         const address = await this.prismaService.address.findUniqueOrThrow({
             where: { id: addressId, userId },
         });
@@ -108,58 +120,109 @@ export class OrdersService {
         // TODO: check if relay exists
 
         const tax = 0;
-        const amount = this.getCartTotalAmount(cart) * 100;
-        const taxAmount = amount * tax;
-        const totalAmount = amount + taxAmount;
+        const cartAmount = this.getCartTotalAmount(cart) * 100;
+        const taxAmount = cartAmount * tax;
+        const totalAmount = cartAmount + taxAmount;
 
-        const order = await this.prismaService.order.create({
+        const newOrder = await this.prismaService.order.create({
             data: {
                 id: uuidv4(),
-                amount,
+                cartAmount,
                 taxAmount,
                 totalAmount,
-                relayId,
                 Address: { connect: { id: addressId } },
                 User: { connect: { id: userId } },
                 Cart: { connect: { id: cartId } },
+                Payment: {
+                    create: {
+                        id: uuidv4(),
+                        amountTotal: totalAmount
+                    }
+                },
+                Shipping: {
+                    create: {
+                        id: uuidv4(),
+                        relayId,
+                        carrierName,
+                    }
+                }
             },
-            include: { Cart: { include: { CartItem: { include: { Item: true } } } } }
+            include: {
+                Cart: { include: { CartItem: { include: { Item: true } } } },
+                Payment: true,
+                Shipping: true
+            }
         });
 
         const newCart = await this.cartService.createNewCart(userId);
 
-        const paymentSession = await this.paymentService.createPaymentSession(userId, order)
+        return newOrder;
+    }
 
-        const updatedOrder = await this.prismaService.order.findUnique({
-            where: { id: order.id },
-            include: {
-                Cart: { include: { CartItem: { include: { Item: true } } } },
-                Payment: true
-            }
-        });
-
-        return updatedOrder;
+    getCartTotalAmount(cart: any): number {
+        let totalAmount = 0;
+        for (const cartItem of cart.CartItem) {
+            totalAmount += Number((cartItem.Item.price).toString())
+        }
+        return totalAmount;
     }
 
     setShippingInfosToOrder(orderId: any, shippingInfos: any) {
         const updatedOrder = this.prismaService.order.update({
             where: { id: orderId },
             data: {
-                expeditionNumber: shippingInfos.expeditionNumber,
-                stickerUrl: shippingInfos.urlEtiquette,
-                status: 'in_shipping'
+                Shipping: {
+                    update: {
+                        expeditionNumber: shippingInfos.expeditionNumber,
+                        stickerUrl: shippingInfos.urlEtiquette
+                    }
+                }
+            },
+            include: {
+                Payment: true,
+                Shipping: true
             }
         });
 
         return updatedOrder;
     }
 
-    getCartTotalAmount(cart: any): number {
-        let amount = 0;
-        for (const cartItem of cart.CartItem) {
-            amount += Number((cartItem.Item.price).toString())
-        }
-        return amount;
+    async checkAndUpdateOrderStatus(userId: string, orderId: string) {
+        const order = await this.getUserOrderByIdWithDetails(userId, orderId);
+
+        await this.paymentService.checkAndUpdatePaymentStatus(orderId);
+        await this.shippingService.checkAndUpdateShippingStatus(orderId);
+
+        //// OrderStatus: PENDING, CANCELLED, FINISHED
+        // set CANCELLED
+        if (
+            order.Payment?.status === PaymentStatus.EXPIRED ||
+            order.Shipping.status === ShippingStatus.CANCELLED
+        )
+            return await this.updateOrderStatus(orderId, OrderStatus.CANCELLED);
+
+        // set FINISHED
+        if (
+            order.Payment?.status === PaymentStatus.COMPLETE &&
+            order.Shipping.status === ShippingStatus.RETRIEVED
+        )
+            return await this.updateOrderStatus(orderId, OrderStatus.FINISHED);
+
+        // set PENDING
+        return await this.updateOrderStatus(orderId, OrderStatus.PENDING);
+
+    }
+
+    async updateOrderStatus(orderId: string, status: OrderStatus) {
+        const updatedOrder = await this.prismaService.order.update({
+            where: { id: orderId },
+            data: { status },
+            include: {
+                Payment: true,
+                Shipping: true
+            }
+        });
+        return updatedOrder;
     }
 
 }

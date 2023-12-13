@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ShippingController } from './shipping.controller';
 import { ShippingService } from './shipping.service';
 import { AddressesModule } from 'src/addresses/addresses.module';
@@ -12,7 +12,8 @@ import { Md5HashService } from './services/md5-hash.service';
 @Module({
     imports: [
         AddressesModule,
-        OrdersModule
+
+        forwardRef(() => OrdersModule)
     ],
     controllers: [ShippingController],
     providers: [
@@ -22,6 +23,7 @@ import { Md5HashService } from './services/md5-hash.service';
         MondialRelayPricesService,
         Md5HashService,
         SoapService
-    ]
+    ],
+    exports: [ShippingService]
 })
 export class ShippingModule { }

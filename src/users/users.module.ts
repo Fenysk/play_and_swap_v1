@@ -5,7 +5,8 @@ import { AddressesModule } from 'src/addresses/addresses.module';
 
 @Module({
     imports: [
-        forwardRef(() => AddressesModule)
+        forwardRef(() => AddressesModule),
+
     ],
     providers: [UsersService],
     controllers: [UsersController],

@@ -1,4 +1,4 @@
-import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, Post, Put } from '@nestjs/common';
 import { ShippingService } from './shipping.service';
 import { GetUser } from 'src/users/decorator';
 
@@ -29,6 +29,14 @@ export class ShippingController {
         @Param('orderId') orderId: string
     ) {
         return this.shippingService.createRelayExpedition(orderId);
+    }
+
+    @Get('check-expedition/:expeditionNumber')
+    @HttpCode(HttpStatus.OK)
+    async checkRelayExpedition(
+        @Param('expeditionNumber') expeditionNumber: string
+    ) {
+        return this.shippingService.checkRelayExpedition(expeditionNumber);
     }
 
 }

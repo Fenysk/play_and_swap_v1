@@ -22,9 +22,7 @@ export class SoapService {
             end: '</soap12:Body>'
         }
 
-        console.log(args);
         const xmlData = this.transformObjectToXml(args);
-        console.log(xmlData);
 
         const bodyContent = `${envelope.start}${body.start}${action.start}${xmlData}${action.end}${body.end}${envelope.end}`;
 
@@ -70,9 +68,8 @@ export class SoapService {
         const action = Object.keys(object['soap:Envelope']['soap:Body'])[0].replace('Response', '');
         const objectResponse = object['soap:Envelope']['soap:Body'][`${action}Response`][`${action}Result`];
 
-        const apiErrorsMessages = API_ERRORS_MESSAGE;
-        if (objectResponse.STAT !== '0')
-            throw new Error('Error ' + objectResponse.STAT + ' : ' + apiErrorsMessages[objectResponse.STAT]);
+        if (objectResponse.STAT in API_ERRORS_MESSAGE)
+            throw new Error('Error ' + objectResponse.STAT + ' : ' + API_ERRORS_MESSAGE[objectResponse.STAT]);
 
         return objectResponse;
     }

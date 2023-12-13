@@ -7,22 +7,21 @@ export class Md5HashService {
     constructor(private readonly configService: ConfigService) { }
 
     getSecurityHash(args: any) {
+
+        for (const key in args) {
+            if (typeof args[key] === 'string')
+                args[key] = args[key].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
         const MONDIAL_RELAY_SECRET_KEY = this.configService.get('MONDIAL_RELAY_SECRET_KEY');
 
         let data = '';
 
-        console.log(args);
-
-        for (const key in args) {
-            if (key !== 'Texte') {
-                data += args[key];
-                console.log(key + ' : ' + args[key]);
-            }
-        }
+        for (const key in args)
+            if (key !== 'Texte')
+                data += args[key]
 
         data += MONDIAL_RELAY_SECRET_KEY;
-
-        console.log(data);
 
         const hash = crypto.createHash('md5').update(data).digest('hex').toUpperCase();
 

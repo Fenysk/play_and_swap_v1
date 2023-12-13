@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { GetUser } from 'src/users/decorator';
 
@@ -15,13 +15,13 @@ export class PaymentController {
     }
 
     @Get('session/retrieve/:sessionId')
-    async getPaymentSession(@Param('sessionId') paymentSessionId: string): Promise<any> {
-        return await this.paymentService.getPaymentSession(paymentSessionId);
+    async retrievePaymentSession(@Param('sessionId') paymentSessionId: string): Promise<any> {
+        return await this.paymentService.retrievePaymentSession(paymentSessionId);
     }
 
-    @Post('verify/:paymentId')
-    async verifyPaymentStatus(@Param('paymentId') paymentId: string) {
-        return await this.paymentService.verifyPaymentStatus(paymentId);
+    @Get('session/:orderId')
+    async getPaymentSession(@Param('orderId') orderId: string): Promise<any> {
+        return await this.paymentService.getPaymentSession(orderId);
     }
 
 }

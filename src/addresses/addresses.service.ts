@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
+import { Address } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -48,17 +49,17 @@ export class AddressesService {
     async getMyDefaultCustomerAddress(userId: string) {
         const user = await this.usersService.getUserById(userId);
 
-        const address = await this.prismaService.address.findUniqueOrThrow({
-            where: { id: user.defaultCustomerAddressId },
-        });
+        const address = user.Addresses.find((address: Address) => address.id === user.defaultCustomerAddressId);
 
-        if (address.userId !== userId)
-            throw new NotFoundException('Address not found');
+        if (!address)
+            throw new NotFoundException('Default address not found');
 
         return address;
     }
 
     async createAddress(userId: string, data: any) {
+        const user = await this.usersService.getUserById(userId);
+
         const address = await this.prismaService.address.create({
             data: {
                 id: uuidv4(),
@@ -70,6 +71,9 @@ export class AddressesService {
                 User: { connect: { id: userId }, },
             },
         });
+
+        if (!user.defaultCustomerAddressId)
+            await this.setDefaultAddress(userId, address.id);
 
         return address;
     }

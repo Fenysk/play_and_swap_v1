@@ -45,8 +45,8 @@ model Address {
     createdAt       DateTime @default(now()) @map("created_at")
     updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
 
-    userId String? @map("user_id")
-    User   User?   @relation(fields: [userId], references: [id])
+    userId String @map("user_id")
+    User   User   @relation(fields: [userId], references: [id])
 
     Order Order[]
 
@@ -106,17 +106,12 @@ model CartItem {
 }
 
 model Order {
-    id                   String  @id @unique
-    amount               Int
-    taxAmount            Int     @default(0) @map("tax_amount")
-    totalAmount          Int     @map("total_amount")
-    currency             String  @default("eur")
-    status               String  @default("pending")
-    relayId              String? @map("relay_id")
-    shippingInstructions String? @map("shipping_instructions")
-
-    expeditionNumber String? @map("expedition_number")
-    stickerUrl       String? @map("sticker_url")
+    id          String      @id @unique
+    cartAmount  Int
+    taxAmount   Int         @default(0) @map("tax_amount")
+    totalAmount Int         @map("total_amount")
+    currency    Currency    @default(EUR)
+    status      OrderStatus @default(PENDING)
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -130,7 +125,8 @@ model Order {
     addressId String  @map("address_id")
     Address   Address @relation(fields: [addressId], references: [id])
 
-    Payment Payment?
+    Payment  Payment?
+    Shipping Shipping?
 
     @@unique([userId, cartId])
     @@map("orders")
@@ -139,13 +135,12 @@ model Order {
 model Payment {
     id String @id @unique
 
-    sessionId  String  @map("session_id")
-    sessionUrl String? @map("session_url")
-    status     String
+    sessionId  String?       @map("session_id")
+    sessionUrl String?       @map("session_url")
+    status     PaymentStatus @default(INITIATED)
 
-    currency      String @default("eur")
-    amountTotal   Int    @map("amount_total")
-    paymentStatus String @map("payment_status")
+    currency    Currency @default(EUR)
+    amountTotal Int      @map("amount_total")
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
@@ -156,8 +151,52 @@ model Payment {
     @@map("payments")
 }
 
+model Shipping {
+    id String @id @unique
+
+    carrierName  String         @map("carrier_name")
+    instructions String?
+    status       ShippingStatus @default(INITIATED)
+
+    relayId          String  @map("relay_id")
+    expeditionNumber String? @map("expedition_number")
+    stickerUrl       String? @map("sticker_url")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+    orderId String @unique @map("order_id")
+    Order   Order  @relation(fields: [orderId], references: [id])
+}
+
 enum Role {
     USER
     ADMIN
     SELLER
+}
+
+enum Currency {
+    EUR
+}
+
+enum OrderStatus {
+    PENDING
+    FINISHED
+    CANCELLED
+}
+
+enum PaymentStatus {
+    INITIATED
+    OPEN
+    COMPLETE
+    EXPIRED
+}
+
+enum ShippingStatus {
+    INITIATED
+    IN_SHIPMENT
+    SHIPPED
+    DELIVERED
+    RETRIEVED
+    CANCELLED
 }
