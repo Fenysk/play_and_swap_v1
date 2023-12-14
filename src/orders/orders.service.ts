@@ -117,7 +117,8 @@ export class OrdersService {
             where: { id: addressId, userId },
         });
 
-        // TODO: check if relay exists
+        if (!await this.shippingService.checkIfRelayPointExists(relayId))
+            throw new NotFoundException('Relay point not found');
 
         const tax = 0;
         const cartAmount = this.getCartTotalAmount(cart) * 100;

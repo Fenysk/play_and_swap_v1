@@ -47,7 +47,6 @@ export const API_ERRORS_MESSAGE = {
     67: "Latitude invalide",
     68: "Longitude invalide",
     69: "Code Enseigne invalide",
-    70: "Numéro de Point Relais invalide",
     71: "Nature de point de vente non valide",
     74: "Langue invalide",
     78: "Pays de Collecte invalide",

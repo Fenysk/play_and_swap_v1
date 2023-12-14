@@ -6,6 +6,14 @@ import { GetUser } from 'src/users/decorator';
 export class ShippingController {
     constructor(private readonly shippingService: ShippingService) { }
 
+    @Get('relay-point/check/:relayId')
+    @HttpCode(HttpStatus.OK)
+    async checkIfRelayPointExists(
+        @Param('relayId') relayId: string
+    ) {
+        return this.shippingService.checkIfRelayPointExists(relayId);
+    }
+
     @Post('relay-points/default')
     @HttpCode(HttpStatus.OK)
     async getRelayPointsArroundMeByDefaultAddress(

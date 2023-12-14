@@ -18,6 +18,12 @@ export class ShippingService {
         @Inject(forwardRef(() => OrdersService)) private readonly ordersService: OrdersService,
     ) { }
 
+    async checkIfRelayPointExists(relayId: string) {
+        const relayPoints = await this.mondialRelayPointsService.checkIfRelayPointExists(relayId);
+
+        return relayPoints;
+    }
+
     async getRelayPointsArroundMeByAddressId(userId: string, addressId: string) {
         const address = await this.addressesService.getMyAddressById(userId, addressId);
 

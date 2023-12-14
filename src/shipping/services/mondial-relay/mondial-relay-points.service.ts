@@ -55,4 +55,21 @@ export class MondialRelayPointsService {
         return relayPoints;
     }
 
+    async checkIfRelayPointExists(relayId: string) {
+        const API_URL = this.configService.get('MONDIAL_RELAY_API_URL');
+
+        const actionName = 'WSI2_DetailPointRelais'
+
+        const args = {
+            Enseigne: this.configService.get('MONDIAL_RELAY_ENSEIGNE'),
+            Num: relayId,
+            Pays: 'FR',
+        };
+        args['Security'] = this.md5HashService.getSecurityHash(args)
+
+        const response = await this.soapService.postSoapRequest(API_URL, actionName, args);
+
+        return response.STAT === '0';
+    }
+
 }
