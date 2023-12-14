@@ -39,6 +39,14 @@ export class ShippingController {
         return this.shippingService.createRelayExpedition(orderId);
     }
 
+    @Get('get-etiquette/:expeditionNumber')
+    @HttpCode(HttpStatus.OK)
+    async getRelayExpeditionEtiquette(
+        @Param('expeditionNumber') expeditionNumber: string
+    ) {
+        return this.shippingService.getRelayExpeditionEtiquette(expeditionNumber);
+    }
+
     @Get('check-expedition/:expeditionNumber')
     @HttpCode(HttpStatus.OK)
     async checkRelayExpedition(

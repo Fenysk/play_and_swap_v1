@@ -95,6 +95,12 @@ export class ShippingService {
         return newExpedition;
     }
 
+    async getRelayExpeditionEtiquette(expeditionNumber: string) {
+        const expeditionEtiquette = await this.mondialRelayExpeditionService.getMondialRelayExpeditionEtiquette(expeditionNumber);
+
+        return expeditionEtiquette;
+    }
+
     async checkRelayExpedition(expeditionNumber: string) {
         const expeditionDetails = await this.mondialRelayExpeditionService.checkMondialRelayExpedition(expeditionNumber);
 

@@ -58,7 +58,7 @@ export class UsersService {
 
         const newUser = await this.prismaService.user.create({
             data: {
-                id: uuidv4(),
+                id: uuidv4().replace(/-/g, '').substring(0, 9),
                 email: data.email,
                 hashedPassword: data.hashedPassword,
                 activeCartId: newCartId,

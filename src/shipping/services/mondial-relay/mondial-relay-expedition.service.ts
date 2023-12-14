@@ -6,6 +6,8 @@ import { Md5HashService } from "../md5-hash.service";
 import { API_SUCCESS_MESSAGE } from "./api-success-message";
 const crypto = require('crypto');
 
+const startUrl = 'https://www.mondialrelay.fr';
+
 @Injectable()
 export class MondialRelayExpeditionService {
     constructor(
@@ -31,8 +33,8 @@ export class MondialRelayExpeditionService {
             Enseigne: this.configService.get('MONDIAL_RELAY_ENSEIGNE'),
             ModeCol: 'REL',
             ModeLiv: '24R',
-            NDossier: '15max',
-            NClient: '9max',
+            NDossier: order.id,
+            NClient: order.userId,
 
             Expe_Langage: 'FR',
             Expe_Ad1: expeditionInfos.lastName + ' ' + expeditionInfos.firstName,
@@ -76,11 +78,37 @@ export class MondialRelayExpeditionService {
     }
 
     getNewExpeditionInfosObject(objectResponse: any) {
-        const startUrl = 'https://www.mondialrelay.fr';
-
         const expeditionInfos = {
             expeditionNumber: objectResponse.ExpeditionNum,
             urlEtiquette: startUrl + objectResponse.URL_Etiquette.replace('&amp;', '&')
+        };
+
+        return expeditionInfos;
+    }
+
+    async getMondialRelayExpeditionEtiquette(expeditionNumber: string) {
+        const API_URL = this.configService.get('MONDIAL_RELAY_API_URL');
+
+        const actionName = 'WSI3_GetEtiquettes';
+
+        const args = {
+            Enseigne: this.configService.get('MONDIAL_RELAY_ENSEIGNE'),
+            Expeditions: expeditionNumber,
+            Langue: 'FR'
+        }
+        args['Security'] = this.md5HashService.getSecurityHash(args)
+
+        const response = await this.soapService.postSoapRequest(API_URL, actionName, args);
+        const expeditionInfos = this.getExpeditionEtiquetteObject(response);
+
+        return expeditionInfos;
+    }
+
+    getExpeditionEtiquetteObject(objectResponse: any) {
+        const startUrl = 'https://www.mondialrelay.fr';
+
+        const expeditionInfos = {
+            urlEtiquette: startUrl + objectResponse.URL_PDF_10x15.replace('&amp;', '&')
         };
 
         return expeditionInfos;

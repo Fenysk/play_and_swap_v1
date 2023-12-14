@@ -36,8 +36,6 @@ export class SoapService {
 
         const text = await response.text();
 
-        console.log(text);
-
         const data = this.transformXmlToObject(text);
         return data;
     }

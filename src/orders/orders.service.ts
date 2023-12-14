@@ -127,7 +127,7 @@ export class OrdersService {
 
         const newOrder = await this.prismaService.order.create({
             data: {
-                id: uuidv4(),
+                id: uuidv4().replace(/-/g, '').substring(0, 15),
                 cartAmount,
                 taxAmount,
                 totalAmount,
