@@ -21,7 +21,8 @@ export class MondialRelayPointsService {
         const args = {
             Enseigne: this.configService.get('MONDIAL_RELAY_ENSEIGNE'),
             Pays: address.country,
-            CP: address.zipCode,
+            Ville: address.city.replace(/-/g, ' '),
+            CP: address.zipCode
         };
         args['Security'] = this.md5HashService.getSecurityHash(args)
 

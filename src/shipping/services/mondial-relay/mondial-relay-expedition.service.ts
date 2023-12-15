@@ -127,12 +127,19 @@ export class MondialRelayExpeditionService {
         args['Security'] = this.md5HashService.getSecurityHash(args)
 
         const response = await this.soapService.postSoapRequest(API_URL, actionName, args);
+
         const expeditionInfos = this.getExpeditionInfosObject(response);
 
         return expeditionInfos;
     }
 
     getExpeditionInfosObject(objectResponse: any) {
+
+        if (objectResponse.Tracing?.ret_WSI2_sub_TracingColisDetaille)
+            for (const detail of objectResponse.Tracing?.ret_WSI2_sub_TracingColisDetaille) {
+                if (detail.Libelle === 'COLIS ANNULE')
+                    objectResponse.STAT = '100';
+            }
 
         const expeditionInfos = {
             STAT: objectResponse.STAT,

@@ -11,4 +11,5 @@ export const API_SUCCESS_MESSAGE = {
     87: "(Réservé Code Tracing)",
     88: "(Réservé Code Tracing)",
     89: "(Réservé Code Tracing)",
+    100: "Colis annulé"
 };

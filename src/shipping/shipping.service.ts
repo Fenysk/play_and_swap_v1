@@ -122,6 +122,7 @@ export class ShippingService {
             '81': ShippingStatus.SHIPPED,
             '82': ShippingStatus.DELIVERED,
             '83': ShippingStatus.CANCELLED,
+            '100': ShippingStatus.CANCELLED,
         }
 
         const updatedShipping = await this.prismaService.shipping.update({
