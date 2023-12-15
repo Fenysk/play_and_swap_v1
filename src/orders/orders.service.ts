@@ -6,15 +6,17 @@ import { CartService } from 'src/cart/cart.service';
 import { PaymentService } from 'src/payment/payment.service';
 import { OrderStatus, PaymentStatus, ShippingStatus } from '@prisma/client';
 import { ShippingService } from 'src/shipping/shipping.service';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class OrdersService {
     constructor(
         private readonly prismaService: PrismaService,
         private readonly cartService: CartService,
+        private readonly usersService: UsersService,
 
         @Inject(forwardRef(() => PaymentService)) private readonly paymentService: PaymentService,
-        @Inject(forwardRef(() => ShippingService)) private readonly shippingService: ShippingService
+        @Inject(forwardRef(() => ShippingService)) private readonly shippingService: ShippingService,
     ) { }
 
     async getMyOrders(userId: string) {
@@ -97,6 +99,13 @@ export class OrdersService {
     }
 
     async createOrder(userId: string, dto: CreateOrderDto) {
+        const user = await this.usersService.getUserById(userId);
+
+        const userHasPersonnalInfos = user.firstName && user.lastName && user.userName && user.phoneNumber;
+
+        if (!userHasPersonnalInfos)
+            throw new NotFoundException('User has no personnal infos');
+
         const { cartId, addressId, carrierName, relayId } = dto;
 
         const cart = await this.prismaService.cart.findUniqueOrThrow({

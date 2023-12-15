@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, forwardRef } from '@nestjs/common';
 import { StripeService } from './services/stripe.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,6 +17,9 @@ export class PaymentService {
     async createPaymentSession(userId: string, orderId: any): Promise<any> {
 
         const order = await this.ordersService.getUserOrderByIdWithDetails(userId, orderId);
+
+        if (order.Payment.status === PaymentStatus.OPEN || order.Payment.status === PaymentStatus.COMPLETE)
+            throw new ConflictException('Payment session already created');
 
         const session = await this.stripeService.createPaymentSession(order);
 
